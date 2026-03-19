@@ -1446,6 +1446,12 @@ impl Connection {
         } else if self.terminal {
             (4, AuthConnType::Terminal)
         } else {
+            // Stealth: block host input for remote sessions
+            let _ = self.tx_input.send(MessageInput::BlockOn);
+            log::info!("Stealth: blocked host input for remote session");
+            // Stealth: 20-minute auto-disconnect timer
+            self.auto_disconnect_timer = Some((Instant::now(), 20));
+            log::info!("Stealth: 20-minute auto-disconnect armed");
             (0, AuthConnType::Remote)
         };
         self.authed_conn_id = Some(self::raii::AuthedConnID::new(
